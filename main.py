@@ -48,9 +48,9 @@ destination_label = tk.Label(destination_labelframe, text="Destination")
 source_label.grid(row=0, column=0, padx=5, pady=5)
 destination_label.grid(row=0, column=0, padx=5, pady=5)
 paste_button = tk.Button(
-    source_labelframe, text="Paste Input", command=paste_input, font="Arial 10 bold")
+    source_labelframe, text="Paste Input", command=paste_input, font="Arial 8 bold")
 copy_button = tk.Button(destination_labelframe,
-                        text="Copy Output", command=copy_output, font="Arial 10 bold")
+                        text="Copy Output", command=copy_output, font="Arial 8 bold")
 paste_button.grid(row=0, column=1, padx=5, pady=5)
 copy_button.grid(row=0, column=2, padx=5, pady=5)
 
@@ -75,4 +75,5 @@ convert_button.grid(row=0, column=0, padx=345, pady=5)
 exit_button = tk.Button(action_labelframe, text="Exit", command=window.destroy, font="Arial 12 bold")
 exit_button.place(relx=0.98, rely=0.5, anchor="e")
 
+window.eval('tk::PlaceWindow . center')
 window.mainloop()
