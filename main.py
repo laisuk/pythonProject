@@ -1,6 +1,6 @@
-import tkinter as tk
-import pyperclip as pc
-import jieba
+import tkinter as tk # GUI
+import pyperclip as pc # Clipboard module
+import jieba # Segmentor module
 from opencc import OpenCC # use module: pip install -u opencc-python-reimplemented
 
 
