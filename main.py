@@ -1,7 +1,7 @@
 import tkinter as tk
 import pyperclip as pc
-from opencc import OpenCC
 import jieba
+from opencc import OpenCC # use module: pip install -u opencc-python-reimplemented
 
 
 def paste_input():
@@ -59,7 +59,8 @@ source_scrollbar = tk.Scrollbar(
 source_scrollbar.grid(row=0, column=1, sticky="news")
 source_texbox['yscrollcommand'] = source_scrollbar.set
 
-destination_textbox = tk.Text(content_labelframe, width=50, height=25, font="12")
+destination_textbox = tk.Text(
+    content_labelframe, width=50, height=25, font="12")
 destination_textbox.grid(row=0, column=2, padx=10, pady=5)
 destination_scrollbar = tk.Scrollbar(
     content_labelframe, command=destination_textbox.yview)
@@ -68,8 +69,10 @@ destination_textbox['yscrollcommand'] = destination_scrollbar.set
 
 source_labelframe = tk.LabelFrame(content_labelframe)
 destination_labelframe = tk.LabelFrame(content_labelframe)
-source_labelframe.grid(row=1, column=0, sticky="news", padx=10, pady=5, columnspan=2)
-destination_labelframe.grid(row=1, column=2, sticky="news", padx=10, pady=5, columnspan=2)
+source_labelframe.grid(row=1, column=0, sticky="news",
+                       padx=10, pady=5, columnspan=2)
+destination_labelframe.grid(
+    row=1, column=2, sticky="news", padx=10, pady=5, columnspan=2)
 source_label = tk.Label(source_labelframe, text="Source")
 destination_label = tk.Label(destination_labelframe, text="Destination")
 source_label.grid(row=1, column=0, padx=5, pady=5)
@@ -82,10 +85,12 @@ paste_button.grid(row=1, column=1, padx=5, pady=5)
 copy_button.grid(row=1, column=2, padx=5, pady=5)
 
 action_labelframe = tk.LabelFrame(frame)
-convert_button = tk.Button(action_labelframe, text="Convert", command=convert, font="Arial 12 bold")
+convert_button = tk.Button(
+    action_labelframe, text="Convert", command=convert, font="Arial 12 bold")
 action_labelframe.grid(row=2, column=0, sticky="news", padx=20, pady=5)
 convert_button.grid(row=0, column=0, padx=395, pady=5)
-exit_button = tk.Button(action_labelframe, text="Exit", command=window.destroy, font="Arial 12 bold")
+exit_button = tk.Button(action_labelframe, text="Exit",
+                        command=window.destroy, font="Arial 12 bold")
 exit_button.place(relx=0.98, rely=0.5, anchor="e")
 
 window.eval('tk::PlaceWindow . center')
