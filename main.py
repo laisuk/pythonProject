@@ -6,8 +6,8 @@ from opencc import OpenCC # use module: pip install -u opencc-python-reimplement
 
 def paste_input():
     text = pc.paste()
-    source_texbox.delete("1.0", tk.END)
-    source_texbox.insert("1.0", text)
+    source_textbox.delete("1.0", tk.END)
+    source_textbox.insert("1.0", text)
 
     test_text = text if len(text) < 100 else text[0:100]
     
@@ -20,6 +20,8 @@ def paste_input():
             config_option.set(value="s2t")
         case _:
             source_charcode_label.config(text="Non-zh")
+
+    source_charcount_label.config(text=f"( {len(text):,} Chars )")
     
 
 
@@ -28,7 +30,7 @@ def copy_output():
 
 
 def convert():
-    input_text = source_texbox.get("1.0", tk.END)
+    input_text = source_textbox.get("1.0", tk.END)
     if config_option.get() == "jieba":
         segment_list = jieba.cut(input_text)
         output_text = "/".join(segment_list)
@@ -80,16 +82,16 @@ jieba_radiobutton.grid(row=0, column=2)
 content_labelframe = tk.LabelFrame(frame, text="Contents")
 content_labelframe.grid(row=1, column=0, padx=20, pady=5, sticky="news")
 
-source_texbox = tk.Text(content_labelframe, width=50, height=25, font="12")
-source_texbox.grid(row=0, column=0, padx=10, pady=5)
+source_textbox = tk.Text(content_labelframe, width=50, height=25, font="12")
+source_textbox.grid(row=0, column=0, padx=(10,0), pady=5)
 source_scrollbar = tk.Scrollbar(
-    content_labelframe, command=source_texbox.yview)
+    content_labelframe, command=source_textbox.yview)
 source_scrollbar.grid(row=0, column=1, sticky="news")
-source_texbox['yscrollcommand'] = source_scrollbar.set
+source_textbox['yscrollcommand'] = source_scrollbar.set
 
 destination_textbox = tk.Text(
     content_labelframe, width=50, height=25, font="12")
-destination_textbox.grid(row=0, column=2, padx=10, pady=5)
+destination_textbox.grid(row=0, column=2, padx=(10,0), pady=5)
 destination_scrollbar = tk.Scrollbar(
     content_labelframe, command=destination_textbox.yview)
 destination_scrollbar.grid(row=0, column=3, sticky="news")
@@ -116,12 +118,14 @@ paste_button.grid(row=0, column=1, padx=5, pady=5)
 copy_button.grid(row=0, column=1, padx=5, pady=5)
 source_charcode_label.grid(row=0, column=2, padx=5, pady=5)
 destination_charcode_label.grid(row=0, column=2, padx=5, pady=5)
+source_charcount_label = tk.Label(source_labelframe, text=f"( {len(source_textbox.get('1.0', tk.END))-1} Chars )")
+source_charcount_label.place(relx=0.99, rely=0.5, anchor="e")
 
 action_labelframe = tk.LabelFrame(frame)
 convert_button = tk.Button(
     action_labelframe, text=" Convert ", command=convert, font="Arial 12 bold")
-action_labelframe.grid(row=2, column=0, sticky="news", padx=20, pady=5)
-convert_button.grid(row=0, column=0, padx=395, pady=5)
+action_labelframe.grid(row=2, column=0, sticky="news", padx=20, pady=(0,20))
+convert_button.grid(row=0, column=0, padx=390, pady=5)
 exit_button = tk.Button(action_labelframe, text=" Exit ",
                         command=window.destroy, font="Arial 12 bold")
 exit_button.place(relx=0.99, rely=0.5, anchor="e")
