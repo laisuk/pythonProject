@@ -10,16 +10,16 @@ def paste_input():
     source_textbox.delete("1.0", tk.END)
     source_textbox.insert("1.0", text)
 
-    test_text = re.sub(r'[\WA-Za-z0-9]+', "", text)
+    test_text = re.sub(r'[\WA-Za-z0-9_]', "", text)
     test_text = test_text if len(test_text) < 30 else test_text[0:30]
 
     match check_textcode(test_text):
         case 1:
             source_charcode_label.config(text="zh-Hant (繁体)")
-            config_option.set(value="t2s")
+            config_option.set(value="tw2sp")
         case 2:
             source_charcode_label.config(text="zh-Hans (简体)")
-            config_option.set(value="s2t")
+            config_option.set(value="s2twp")
         case _:
             source_charcode_label.config(text="Non-zh")
 
@@ -42,7 +42,7 @@ def convert():
     destination_textbox.insert("1.0", output_text)
 
     if config_option.get() != "jieba" and source_charcode_label.cget("text") != "Non-zh":
-        destination_charcode_label.config(text="zh-Hant (繁体)" if config_option.get() == "s2t" else "zh-Hans (简体)")
+        destination_charcode_label.config(text="zh-Hant (繁体)" if config_option.get() == "s2twp" else "zh-Hans (简体)")
     else:
         destination_charcode_label.config(text=source_charcode_label.cget("text"))
 
@@ -65,13 +65,13 @@ frame.pack()
 
 config_labelframe = tk.LabelFrame(frame, text="Configuration")
 config_labelframe.grid(row=0, column=0, padx=20, pady=5, sticky="news")
-config_option = tk.StringVar(value="t2s")
+config_option = tk.StringVar(value="tw2sp")
 
 t2s_radiobutton = tk.Radiobutton(
-    config_labelframe, text="zh-Hant (繁体) to zh-Hans (简体)", padx=20, pady=5, value="t2s", variable=config_option,
+    config_labelframe, text="zh-Hant (繁体) to zh-Hans (简体)", padx=20, pady=5, value="tw2sp", variable=config_option,
     font="Arial 12")
 s2t_radiobutton = tk.Radiobutton(
-    config_labelframe, text="zh-Hans (简体) to zh-hant (繁体)", padx=20, pady=5, value="s2t", variable=config_option,
+    config_labelframe, text="zh-Hans (简体) to zh-hant (繁体)", padx=20, pady=5, value="s2twp", variable=config_option,
     font="Arial 12")
 jieba_radiobutton = tk.Radiobutton(config_labelframe, text="Words Segmentor (拆词)", padx=20, pady=5, value="jieba",
                                    variable=config_option, font="Arial 12")
