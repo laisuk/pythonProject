@@ -69,7 +69,8 @@ def convert():
         segment_list = jieba.cut(input_text)
         output_text = "/".join(segment_list)
     else:
-        converter = OpenCC(config_option.get() + "p" if zhtw_option.get() else config_option.get())
+        converter = OpenCC(config_option.get() +
+                           "p" if zhtw_option.get() else config_option.get())
         output_text = converter.convert(input_text)
 
     if punctuation_option.get():
@@ -80,7 +81,7 @@ def convert():
 
     if config_option.get() != "jieba" and "Non-zh" not in source_charcode_label.cget("text"):
         destination_charcode_label.config(
-            text="zh-Hant (繁体)" if config_option.get() == "s2twp" else "zh-Hans (简体)")
+            text="zh-Hant (繁体)" if config_option.get() == "s2tw" else "zh-Hans (简体)")
     else:
         destination_charcode_label.config(
             text=source_charcode_label.cget("text"))
@@ -97,8 +98,6 @@ def check_textcode(text):
 
 
 def convert_punctuation(input_text, config):
-    # Use the re module to replace the characters with their mappings
-    import re
     # Declare a dictionary to store the characters and their mappings
     s2t_punctuation_chars = {
         '“': '「',
@@ -109,12 +108,15 @@ def convert_punctuation(input_text, config):
     # Use the join method to create the regular expression patterns
     if config[0] == "s":
         pattern = f"[{''.join(s2t_punctuation_chars.keys())}]"  # "[“”‘’]"
-        output_text = re.sub(pattern, lambda m: s2t_punctuation_chars[m.group(0)], input_text)
+        output_text = re.sub(
+            pattern, lambda m: s2t_punctuation_chars[m.group(0)], input_text)
     else:
         # Use the dict comprehension to reverse the dictionary
-        t2s_punctuation_chars = {v: k for k, v in s2t_punctuation_chars.items()}
+        t2s_punctuation_chars = {v: k for k,
+                                 v in s2t_punctuation_chars.items()}
         pattern = f"[{''.join(t2s_punctuation_chars.keys())}]"  # "[「」『』]"
-        output_text = re.sub(pattern, lambda m: t2s_punctuation_chars[m.group(0)], input_text)
+        output_text = re.sub(
+            pattern, lambda m: t2s_punctuation_chars[m.group(0)], input_text)
 
     return output_text
 
@@ -140,8 +142,10 @@ s2t_radiobutton = tk.Radiobutton(
     font="Arial 12")
 jieba_radiobutton = tk.Radiobutton(config_labelframe, text="Words Segmentor (拆词)", padx=20, pady=5, value="jieba",
                                    variable=config_option, font="Arial 12")
-zhtw_checkbutton = tk.Checkbutton(config_labelframe, text="CN/TW Idioms (中台惯用语)", variable=zhtw_option, font="Arial 10")
-punctuation_checkbutton = tk.Checkbutton(config_labelframe, text="Punctuation (标点符号)", variable=punctuation_option, font="Arial 10")
+zhtw_checkbutton = tk.Checkbutton(
+    config_labelframe, text="ZH/TW Idioms (中台惯用语)", variable=zhtw_option, font="Arial 10")
+punctuation_checkbutton = tk.Checkbutton(
+    config_labelframe, text="Punctuation (标点符号)", variable=punctuation_option, font="Arial 10")
 
 t2s_radiobutton.grid(row=0, column=0)
 s2t_radiobutton.grid(row=0, column=1)
@@ -152,7 +156,8 @@ punctuation_checkbutton.grid(row=1, column=1)
 content_labelframe = tk.LabelFrame(frame, text="Contents")
 content_labelframe.grid(row=1, column=0, padx=20, pady=5, sticky="news")
 
-source_textbox = tk.Text(content_labelframe, width=50, height=25, font="10")
+source_textbox = tk.Text(content_labelframe, width=50,
+                         height=25, font=("Consolas", 11))
 source_textbox.grid(row=0, column=0, padx=(10, 0), pady=5)
 source_scrollbar = tk.Scrollbar(
     content_labelframe, command=source_textbox.yview)
@@ -160,7 +165,7 @@ source_scrollbar.grid(row=0, column=1, sticky="news")
 source_textbox['yscrollcommand'] = source_scrollbar.set
 
 destination_textbox = tk.Text(
-    content_labelframe, width=50, height=25, font="10")
+    content_labelframe, width=50, height=25, font=("Consolas", 11))
 destination_textbox.grid(row=0, column=2, padx=(10, 0), pady=5)
 destination_scrollbar = tk.Scrollbar(
     content_labelframe, command=destination_textbox.yview)
