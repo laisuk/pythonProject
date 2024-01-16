@@ -7,15 +7,21 @@ from opencc import OpenCC  # use module: pip install -u opencc-python-reimplemen
 from tkinter.filedialog import askopenfilename
 
 
-def paste_input():
+def paste_input(source_textbox, source_charcode_label, config_option, source_charcount_label, filename_label):
     text = pc.paste()
     source_textbox.delete("1.0", tk.END)
     source_textbox.insert("1.0", text)
 
     test_text = re.sub(r'[\WA-Za-z0-9_]', "", text)
     test_text = test_text if len(test_text) < 30 else test_text[0:30]
+    update_source_info(check_textcode(test_text), source_charcode_label, config_option)
 
-    match check_textcode(test_text):
+    source_charcount_label.config(text=f"( {len(text):,} Chars )")
+    filename_label.config(text="")
+
+
+def update_source_info(textcode, source_charcode_label, config_option):
+    match textcode:
         case 1:
             source_charcode_label.config(text="zh-Hant (繁体)")
             config_option.set(value="tw2s")
@@ -25,15 +31,12 @@ def paste_input():
         case _:
             source_charcode_label.config(text="Non-zh (其它)")
 
-    source_charcount_label.config(text=f"( {len(text):,} Chars )")
-    filename_label.config(text="")
 
-
-def copy_output():
+def copy_output(destination_textbox):
     pc.copy(destination_textbox.get("1.0", tk.END))
 
 
-def openfile():
+def open_file(source_textbox, source_charcode_label, config_option, source_charcount_label, filename_label):
     filename = askopenfilename(initialdir="./", title="Open File", filetypes=(
         ("Text Files", "*.txt"), ("Subtitle Files", "*.srt;*.vtt;*.ass;*.ttml2;*.xml"), ("All Files", "*.*")))
 
@@ -48,32 +51,27 @@ def openfile():
 
     test_text = re.sub(r'[\WA-Za-z0-9_]', "", contents)
     test_text = test_text if len(test_text) < 30 else test_text[0:30]
-
-    match check_textcode(test_text):
-        case 1:
-            source_charcode_label.config(text="zh-Hant (繁体)")
-            config_option.set(value="tw2s")
-        case 2:
-            source_charcode_label.config(text="zh-Hans (简体)")
-            config_option.set(value="s2tw")
-        case _:
-            source_charcode_label.config(text="Non-zh (其它)")
+    update_source_info(check_textcode(test_text), source_charcode_label, config_option)
 
     source_charcount_label.config(text=f"( {len(contents):,} Chars )")
     filename_label.config(text=os.path.basename(filename))
 
 
-def convert():
+def convert(source_textbox, config_option, std_option, zhtw_option, punctuation_option, destination_textbox, source_charcode_label, destination_charcode_label):
     input_text = source_textbox.get("1.0", tk.END)
     if config_option.get() == "jieba":
         segment_list = jieba.cut(input_text)
         output_text = "/".join(segment_list)
+    elif std_option.get():
+        converter = OpenCC(config_option.get().replace(
+            "tw", "t") if not zhtw_option.get() else config_option.get())
+        output_text = converter.convert(input_text)
     else:
         converter = OpenCC(config_option.get() +
                            "p" if zhtw_option.get() else config_option.get())
         output_text = converter.convert(input_text)
 
-    if punctuation_option.get():
+    if punctuation_option.get() and "jieba" not in config_option.get():
         output_text = convert_punctuation(output_text, config_option.get())
 
     destination_textbox.delete("1.0", tk.END)
@@ -121,95 +119,106 @@ def convert_punctuation(input_text, config):
     return output_text
 
 
-# === Main Window === #
-window = tk.Tk()
-window.title("Hans <-> Hant Converter")
+def main():
+    # === Main Window === #
+    window = tk.Tk()
+    window.title("Hans <-> Hant Converter")
 
-frame = tk.Frame(window)
-frame.pack()
+    frame = tk.Frame(window)
+    frame.pack()
 
-config_labelframe = tk.LabelFrame(frame, text="Configuration")
-config_labelframe.grid(row=0, column=0, padx=20, pady=5, sticky="news")
-config_option = tk.StringVar(value="tw2s")
-zhtw_option = tk.IntVar(value=1)
-punctuation_option = tk.IntVar(value=1)
+    config_labelframe = tk.LabelFrame(frame, text="Configuration")
+    config_labelframe.grid(row=0, column=0, padx=20, pady=5, sticky="news")
+    config_option = tk.StringVar(value="tw2s")
+    std_option = tk.IntVar(value=0)
+    zhtw_option = tk.IntVar(value=1)
+    punctuation_option = tk.IntVar(value=1)
 
-t2s_radiobutton = tk.Radiobutton(
-    config_labelframe, text="zh-Hant (繁体) to zh-Hans (简体)", padx=20, pady=5, value="tw2s", variable=config_option,
-    font="Arial 12")
-s2t_radiobutton = tk.Radiobutton(
-    config_labelframe, text="zh-Hans (简体) to zh-hant (繁体)", padx=20, pady=5, value="s2tw", variable=config_option,
-    font="Arial 12")
-jieba_radiobutton = tk.Radiobutton(config_labelframe, text="Words Segmentor (拆词)", padx=20, pady=5, value="jieba",
-                                   variable=config_option, font="Arial 12")
-zhtw_checkbutton = tk.Checkbutton(
-    config_labelframe, text="ZH/TW Idioms (中台惯用语)", variable=zhtw_option, font="Arial 10")
-punctuation_checkbutton = tk.Checkbutton(
-    config_labelframe, text="Punctuation (标点符号)", variable=punctuation_option, font="Arial 10")
+    t2s_radiobutton = tk.Radiobutton(
+        config_labelframe, text="zh-Hant (繁体) to zh-Hans (简体)", padx=20, pady=5, value="tw2s", variable=config_option,
+        font="Arial 12")
+    s2t_radiobutton = tk.Radiobutton(
+        config_labelframe, text="zh-Hans (简体) to zh-hant (繁体)", padx=20, pady=5, value="s2tw", variable=config_option,
+        font="Arial 12")
+    jieba_radiobutton = tk.Radiobutton(config_labelframe, text="Words Segmentor (拆词)", padx=20, pady=5, value="jieba",
+                                       variable=config_option, font="Arial 12")
 
-t2s_radiobutton.grid(row=0, column=0)
-s2t_radiobutton.grid(row=0, column=1)
-jieba_radiobutton.grid(row=0, column=2)
-zhtw_checkbutton.grid(row=1, column=0)
-punctuation_checkbutton.grid(row=1, column=1)
+    std_checkbutton = tk.Checkbutton(
+        config_labelframe, text="Standard (标准简繁)", variable=std_option, font="Arial 10")
+    zhtw_checkbutton = tk.Checkbutton(
+        config_labelframe, text="ZH/TW Idioms (中台惯用语)", variable=zhtw_option, font="Arial 10")
+    punctuation_checkbutton = tk.Checkbutton(
+        config_labelframe, text="Punctuation (标点符号)", variable=punctuation_option, font="Arial 10")
 
-content_labelframe = tk.LabelFrame(frame, text="Contents")
-content_labelframe.grid(row=1, column=0, padx=20, pady=5, sticky="news")
+    t2s_radiobutton.grid(row=0, column=0)
+    s2t_radiobutton.grid(row=0, column=1)
+    jieba_radiobutton.grid(row=0, column=2)
+    std_checkbutton.grid(row=1, column=0)
+    zhtw_checkbutton.grid(row=1, column=1)
+    punctuation_checkbutton.grid(row=1, column=2)
 
-source_textbox = tk.Text(content_labelframe, width=50,
-                         height=25, font=("Consolas", 11))
-source_textbox.grid(row=0, column=0, padx=(10, 0), pady=5)
-source_scrollbar = tk.Scrollbar(
-    content_labelframe, command=source_textbox.yview)
-source_scrollbar.grid(row=0, column=1, sticky="news")
-source_textbox['yscrollcommand'] = source_scrollbar.set
+    content_labelframe = tk.LabelFrame(frame, text="Contents")
+    content_labelframe.grid(row=1, column=0, padx=20, pady=5, sticky="news")
 
-destination_textbox = tk.Text(
-    content_labelframe, width=50, height=25, font=("Consolas", 11))
-destination_textbox.grid(row=0, column=2, padx=(10, 0), pady=5)
-destination_scrollbar = tk.Scrollbar(
-    content_labelframe, command=destination_textbox.yview)
-destination_scrollbar.grid(row=0, column=3, sticky="news")
-destination_textbox['yscrollcommand'] = destination_scrollbar.set
+    source_textbox = tk.Text(content_labelframe, width=50,
+                             height=25, font=("Consolas", 11))
+    source_textbox.grid(row=0, column=0, padx=(10, 0), pady=5)
+    source_scrollbar = tk.Scrollbar(
+        content_labelframe, command=source_textbox.yview)
+    source_scrollbar.grid(row=0, column=1, sticky="news")
+    source_textbox['yscrollcommand'] = source_scrollbar.set
 
-source_labelframe = tk.LabelFrame(content_labelframe)
-destination_labelframe = tk.LabelFrame(content_labelframe)
-source_labelframe.grid(row=1, column=0, sticky="news",
-                       padx=10, pady=5, columnspan=2)
-destination_labelframe.grid(
-    row=1, column=2, sticky="news", padx=10, pady=5, columnspan=2)
-source_label = tk.Label(source_labelframe, text="Source")
-destination_label = tk.Label(destination_labelframe, text="Destination")
-source_label.grid(row=0, column=0, padx=5, pady=5)
-destination_label.grid(row=0, column=0, padx=5, pady=5)
-paste_button = tk.Button(
-    source_labelframe, text=" Paste ", command=paste_input, font="Arial 8 bold")
-copy_button = tk.Button(destination_labelframe,
-                        text=" Copy ", command=copy_output, font="Arial 8 bold")
+    destination_textbox = tk.Text(
+        content_labelframe, width=50, height=25, font=("Consolas", 11))
+    destination_textbox.grid(row=0, column=2, padx=(10, 0), pady=5)
+    destination_scrollbar = tk.Scrollbar(
+        content_labelframe, command=destination_textbox.yview)
+    destination_scrollbar.grid(row=0, column=3, sticky="news")
+    destination_textbox['yscrollcommand'] = destination_scrollbar.set
 
-source_charcode_label = tk.Label(source_labelframe, text="None")
-destination_charcode_label = tk.Label(destination_labelframe, text="None")
-paste_button.grid(row=0, column=1, padx=5, pady=5)
-copy_button.grid(row=0, column=1, padx=5, pady=5)
-source_charcode_label.grid(row=0, column=2, padx=5, pady=5)
-destination_charcode_label.grid(row=0, column=2, padx=5, pady=5)
-source_charcount_label = tk.Label(
-    source_labelframe, text=f"( {len(source_textbox.get('1.0', tk.END)) - 1} Chars )")
-source_charcount_label.place(relx=0.99, rely=0.5, anchor="e")
+    source_labelframe = tk.LabelFrame(content_labelframe)
+    destination_labelframe = tk.LabelFrame(content_labelframe)
+    source_labelframe.grid(row=1, column=0, sticky="news",
+                           padx=10, pady=5, columnspan=2)
+    destination_labelframe.grid(
+        row=1, column=2, sticky="news", padx=10, pady=5, columnspan=2)
+    source_label = tk.Label(source_labelframe, text="Source")
+    destination_label = tk.Label(destination_labelframe, text="Destination")
+    source_label.grid(row=0, column=0, padx=5, pady=5)
+    destination_label.grid(row=0, column=0, padx=5, pady=5)
+    paste_button = tk.Button(
+        source_labelframe, text=" Paste ", command=lambda: paste_input(source_textbox, source_charcode_label, config_option, source_charcount_label, filename_label), font="Arial 8 bold")
+    copy_button = tk.Button(destination_labelframe,
+                            text=" Copy ", command=lambda: copy_output(destination_textbox), font="Arial 8 bold")
 
-action_labelframe = tk.LabelFrame(frame)
-action_labelframe.grid(row=2, column=0, sticky="news", padx=20, pady=(0, 20))
-openfile_button = tk.Button(
-    action_labelframe, text=" Open File ", command=openfile, font="Arial 10 bold")
-filename_label = tk.Label(action_labelframe, text="")
-convert_button = tk.Button(
-    action_labelframe, text=" Convert ", command=convert, font="Arial 12 bold")
-convert_button.grid(row=0, column=0, padx=390, pady=5)
-openfile_button.place(relx=0.01, rely=0.5, anchor="w")
-filename_label.place(relx=0.11, rely=0.5, anchor="w")
-exit_button = tk.Button(action_labelframe, text=" Exit ",
-                        command=window.destroy, font="Arial 10 bold")
-exit_button.place(relx=0.99, rely=0.5, anchor="e")
+    source_charcode_label = tk.Label(source_labelframe, text="None")
+    destination_charcode_label = tk.Label(destination_labelframe, text="None")
+    paste_button.grid(row=0, column=1, padx=5, pady=5)
+    copy_button.grid(row=0, column=1, padx=5, pady=5)
+    source_charcode_label.grid(row=0, column=2, padx=5, pady=5)
+    destination_charcode_label.grid(row=0, column=2, padx=5, pady=5)
+    source_charcount_label = tk.Label(
+        source_labelframe, text=f"( {len(source_textbox.get('1.0', tk.END)) - 1} Chars )")
+    source_charcount_label.place(relx=0.99, rely=0.5, anchor="e")
 
-window.eval('tk::PlaceWindow . center')
-window.mainloop()
+    action_labelframe = tk.LabelFrame(frame)
+    action_labelframe.grid(
+        row=2, column=0, sticky="news", padx=20, pady=(0, 20))
+    openfile_button = tk.Button(
+        action_labelframe, text=" Open File ", command=lambda: open_file(source_textbox, source_charcode_label, config_option, source_charcount_label, filename_label), font="Arial 10 bold")
+    filename_label = tk.Label(action_labelframe, text="")
+    convert_button = tk.Button(
+        action_labelframe, text=" Convert ", command=lambda: convert(source_textbox, config_option, std_option, zhtw_option, punctuation_option, destination_textbox, source_charcode_label, destination_charcode_label), font="Arial 12 bold")
+    convert_button.grid(row=0, column=0, padx=390, pady=5)
+    openfile_button.place(relx=0.01, rely=0.5, anchor="w")
+    filename_label.place(relx=0.11, rely=0.5, anchor="w")
+    exit_button = tk.Button(action_labelframe, text=" Exit ",
+                            command=window.destroy, font="Arial 10 bold")
+    exit_button.place(relx=0.99, rely=0.5, anchor="e")
+
+    window.eval('tk::PlaceWindow . center')
+    window.mainloop()
+
+
+if __name__ == "__main__":
+    main()
