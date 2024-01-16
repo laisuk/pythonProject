@@ -12,9 +12,10 @@ def paste_input(source_textbox, source_charcode_label, config_option, source_cha
     source_textbox.delete("1.0", tk.END)
     source_textbox.insert("1.0", text)
 
-    test_text = re.sub(r'[\WA-Za-z0-9_]', "", text)
-    test_text = test_text if len(test_text) < 30 else test_text[0:30]
-    update_source_info(check_textcode(test_text), source_charcode_label, config_option)
+    strip_text = re.sub(r'[\\WA-Za-z0-9_]', "", text)
+    test_text = strip_text if len(strip_text) < 30 else strip_text[0:30]
+    update_source_info(check_textcode(test_text),
+                       source_charcode_label, config_option)
 
     source_charcount_label.config(text=f"( {len(text):,} Chars )")
     filename_label.config(text="")
@@ -33,7 +34,7 @@ def update_source_info(textcode, source_charcode_label, config_option):
 
 
 def copy_output(destination_textbox):
-    pc.copy(destination_textbox.get("1.0", tk.END))
+    pc.copy(destination_textbox.get("1.0", 'end-2c'))
 
 
 def open_file(source_textbox, source_charcode_label, config_option, source_charcount_label, filename_label):
@@ -49,27 +50,40 @@ def open_file(source_textbox, source_charcode_label, config_option, source_charc
     source_textbox.delete("1.0", tk.END)
     source_textbox.insert("1.0", contents)
 
-    test_text = re.sub(r'[\WA-Za-z0-9_]', "", contents)
-    test_text = test_text if len(test_text) < 30 else test_text[0:30]
-    update_source_info(check_textcode(test_text), source_charcode_label, config_option)
+    strip_text = re.sub(r'[\\WA-Za-z0-9_]', "", contents)
+    test_text = strip_text if len(strip_text) < 30 else strip_text[0:30]
+    update_source_info(check_textcode(test_text),
+                       source_charcode_label, config_option)
 
     source_charcount_label.config(text=f"( {len(contents):,} Chars )")
     filename_label.config(text=os.path.basename(filename))
 
 
-def convert(source_textbox, config_option, std_option, zhtw_option, punctuation_option, destination_textbox, source_charcode_label, destination_charcode_label):
+def convert(source_textbox, config_option, region_config_option, zhtw_option, punctuation_option, destination_textbox,
+            source_charcode_label, destination_charcode_label):
+    output_text = ""
     input_text = source_textbox.get("1.0", tk.END)
+
+    if input_text == "\n":
+        return
+
     if config_option.get() == "jieba":
         segment_list = jieba.cut(input_text)
         output_text = "/".join(segment_list)
-    elif std_option.get():
-        converter = OpenCC(config_option.get().replace(
-            "tw", "t") if not zhtw_option.get() else config_option.get())
-        output_text = converter.convert(input_text)
     else:
-        converter = OpenCC(config_option.get() +
-                           "p" if zhtw_option.get() else config_option.get())
-        output_text = converter.convert(input_text)
+        match region_config_option.get():
+            case "std":
+                converter = OpenCC(config_option.get().replace(
+                    "tw", "t"))
+                output_text = converter.convert(input_text)
+            case "zhtw":
+                converter = OpenCC(config_option.get() +
+                                   "p" if zhtw_option.get() else config_option.get())
+                output_text = converter.convert(input_text)
+            case "hk":
+                converter = OpenCC(config_option.get().replace(
+                    "tw", "hk"))
+                output_text = converter.convert(input_text)
 
     if punctuation_option.get() and "jieba" not in config_option.get():
         output_text = convert_punctuation(output_text, config_option.get())
@@ -110,13 +124,20 @@ def convert_punctuation(input_text, config):
             pattern, lambda m: s2t_punctuation_chars[m.group(0)], input_text)
     else:
         # Use the dict comprehension to reverse the dictionary
-        t2s_punctuation_chars = {v: k for k,
-                                 v in s2t_punctuation_chars.items()}
+        t2s_punctuation_chars = {v: k for k, v in s2t_punctuation_chars.items()}
         pattern = f"[{''.join(t2s_punctuation_chars.keys())}]"  # "[「」『』]"
         output_text = re.sub(
             pattern, lambda m: t2s_punctuation_chars[m.group(0)], input_text)
 
     return output_text
+
+
+def std_hk_select(zhtw_option):
+    zhtw_option.set(0)
+
+
+def zhtw_select(zhtw_option):
+    zhtw_option.set(1)
 
 
 def main():
@@ -130,21 +151,31 @@ def main():
     config_labelframe = tk.LabelFrame(frame, text="Configuration")
     config_labelframe.grid(row=0, column=0, padx=20, pady=5, sticky="news")
     config_option = tk.StringVar(value="tw2s")
-    std_option = tk.IntVar(value=0)
+    region_config_option = tk.StringVar(value="zhtw")
     zhtw_option = tk.IntVar(value=1)
     punctuation_option = tk.IntVar(value=1)
 
     t2s_radiobutton = tk.Radiobutton(
-        config_labelframe, text="zh-Hant (繁体) to zh-Hans (简体)", padx=20, pady=5, value="tw2s", variable=config_option,
+        config_labelframe, text="zh-Hant (繁体) to zh-Hans (简体)", padx=20, pady=5, value="tw2s",
+        variable=config_option,
         font="Arial 12")
     s2t_radiobutton = tk.Radiobutton(
-        config_labelframe, text="zh-Hans (简体) to zh-hant (繁体)", padx=20, pady=5, value="s2tw", variable=config_option,
+        config_labelframe, text="zh-Hans (简体) to zh-hant (繁体)", padx=20, pady=5, value="s2tw",
+        variable=config_option,
         font="Arial 12")
-    jieba_radiobutton = tk.Radiobutton(config_labelframe, text="Words Segmentor (拆词)", padx=20, pady=5, value="jieba",
-                                       variable=config_option, font="Arial 12")
+    jieba_radiobutton = tk.Radiobutton(config_labelframe, text="Words Segmentor (拆词)",
+                                       padx=20, pady=5, value="jieba", variable=config_option, font="Arial 12")
 
-    std_checkbutton = tk.Checkbutton(
-        config_labelframe, text="Standard (标准简繁)", variable=std_option, font="Arial 10")
+    std_radiobutton = tk.Radiobutton(config_labelframe, text="Standard (标准简繁)",
+                                     variable=region_config_option, value="std",
+                                     command=lambda: std_hk_select(zhtw_option), font="Arial 10")
+    zhtw_radiobutton = tk.Radiobutton(config_labelframe, text="Mainland/Taiwan (中台简繁)",
+                                      variable=region_config_option, value="zhtw",
+                                      command=lambda: zhtw_select(zhtw_option), font="Arial 10")
+    hk_radiobutton = tk.Radiobutton(config_labelframe, text="Hong Kong (香港简繁)",
+                                    variable=region_config_option, value="hk",
+                                    command=lambda: std_hk_select(zhtw_option), font="Arial 10")
+
     zhtw_checkbutton = tk.Checkbutton(
         config_labelframe, text="ZH/TW Idioms (中台惯用语)", variable=zhtw_option, font="Arial 10")
     punctuation_checkbutton = tk.Checkbutton(
@@ -153,9 +184,11 @@ def main():
     t2s_radiobutton.grid(row=0, column=0)
     s2t_radiobutton.grid(row=0, column=1)
     jieba_radiobutton.grid(row=0, column=2)
-    std_checkbutton.grid(row=1, column=0)
-    zhtw_checkbutton.grid(row=1, column=1)
-    punctuation_checkbutton.grid(row=1, column=2)
+    std_radiobutton.grid(row=2, column=0)
+    zhtw_radiobutton.grid(row=2, column=1)
+    hk_radiobutton.grid(row=2, column=2)
+    zhtw_checkbutton.grid(row=3, column=1)
+    punctuation_checkbutton.grid(row=3, column=2)
 
     content_labelframe = tk.LabelFrame(frame, text="Contents")
     content_labelframe.grid(row=1, column=0, padx=20, pady=5, sticky="news")
@@ -187,7 +220,9 @@ def main():
     source_label.grid(row=0, column=0, padx=5, pady=5)
     destination_label.grid(row=0, column=0, padx=5, pady=5)
     paste_button = tk.Button(
-        source_labelframe, text=" Paste ", command=lambda: paste_input(source_textbox, source_charcode_label, config_option, source_charcount_label, filename_label), font="Arial 8 bold")
+        source_labelframe, text=" Paste ",
+        command=lambda: paste_input(source_textbox, source_charcode_label, config_option, source_charcount_label,
+                                    filename_label), font="Arial 8 bold")
     copy_button = tk.Button(destination_labelframe,
                             text=" Copy ", command=lambda: copy_output(destination_textbox), font="Arial 8 bold")
 
@@ -205,10 +240,15 @@ def main():
     action_labelframe.grid(
         row=2, column=0, sticky="news", padx=20, pady=(0, 20))
     openfile_button = tk.Button(
-        action_labelframe, text=" Open File ", command=lambda: open_file(source_textbox, source_charcode_label, config_option, source_charcount_label, filename_label), font="Arial 10 bold")
+        action_labelframe, text=" Open File ",
+        command=lambda: open_file(source_textbox, source_charcode_label, config_option, source_charcount_label,
+                                  filename_label), font="Arial 10 bold")
     filename_label = tk.Label(action_labelframe, text="")
     convert_button = tk.Button(
-        action_labelframe, text=" Convert ", command=lambda: convert(source_textbox, config_option, std_option, zhtw_option, punctuation_option, destination_textbox, source_charcode_label, destination_charcode_label), font="Arial 12 bold")
+        action_labelframe, text=" Convert ",
+        command=lambda: convert(source_textbox, config_option, region_config_option, zhtw_option, punctuation_option,
+                                destination_textbox, source_charcode_label, destination_charcode_label),
+        font="Arial 12 bold")
     convert_button.grid(row=0, column=0, padx=390, pady=5)
     openfile_button.place(relx=0.01, rely=0.5, anchor="w")
     filename_label.place(relx=0.11, rely=0.5, anchor="w")
