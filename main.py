@@ -12,7 +12,7 @@ def paste_input(source_textbox, source_charcode_label, config_option, source_cha
     source_textbox.delete("1.0", tk.END)
     source_textbox.insert("1.0", text)
 
-    strip_text = re.sub(r'[\\WA-Za-z0-9_]', "", text)
+    strip_text = re.sub(r'[\WA-Za-z0-9_]', "", text)
     test_text = strip_text if len(strip_text) < 30 else strip_text[0:30]
     update_source_info(check_textcode(test_text),
                        source_charcode_label, config_option)
@@ -50,7 +50,7 @@ def open_file(source_textbox, source_charcode_label, config_option, source_charc
     source_textbox.delete("1.0", tk.END)
     source_textbox.insert("1.0", contents)
 
-    strip_text = re.sub(r'[\\WA-Za-z0-9_]', "", contents)
+    strip_text = re.sub(r'[\WA-Za-z0-9_]', "", contents)
     test_text = strip_text if len(strip_text) < 30 else strip_text[0:30]
     update_source_info(check_textcode(test_text),
                        source_charcode_label, config_option)
