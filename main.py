@@ -119,17 +119,19 @@ def convert(source_textbox, config_option, region_config_option, zhtw_option, pu
     else:
         region_config = region_config_option.get()
         if region_config == "std":
-            converter = OpenCC(config_option.get().replace(
-                "tw", "t"))
+            converter = OpenCC(config_option.get())
             output_text = converter.convert(input_text)
-        elif region_config_option == "zhtw":
-            converter = OpenCC(config_option.get() +
-                               "p" if zhtw_option.get() else config_option.get())
+            # print(converter.config)
+        elif region_config == "zhtw":
+            converter = OpenCC(config_option.get().replace("t", "tw") +
+                               "p" if zhtw_option.get() else config_option.get().replace("t", "tw"))
             output_text = converter.convert(input_text)
+            # print(converter.config)
         elif region_config == "hk":
             converter = OpenCC(config_option.get().replace(
-                "tw", "hk"))
+                "t", "hk"))
             output_text = converter.convert(input_text)
+            # print(converter.config)        
 
     if punctuation_option.get() and "jieba" not in config_option.get():
         output_text = convert_punctuation(output_text, config_option.get())
@@ -189,11 +191,15 @@ def zhtw_select(zhtw_option):
     zhtw_option.set(1)
 
 
+def zhtw_click(region_config_option):
+    region_config_option.set("zhtw")
+
+
 def main():
     # === Main Window === #
     window = tk.Tk()
     window.title("Hans <-> Hant Converter")
-    # window.geometry("1000x720")
+    window.geometry("1000x720")
     window.columnconfigure(0, weight=1)
     window.rowconfigure(0, weight=1)
 
@@ -235,7 +241,8 @@ def main():
                                     command=lambda: std_hk_select(zhtw_option), font="Arial 10")
 
     zhtw_checkbutton = tk.Checkbutton(
-        config_labelframe, text="ZH/TW Idioms (中台惯用语)", variable=zhtw_option, font="Arial 10")
+        config_labelframe, text="ZH/TW Idioms (中台惯用语)", variable=zhtw_option, font="Arial 10",
+        command=lambda: zhtw_click(region_config_option))
     punctuation_checkbutton = tk.Checkbutton(
         config_labelframe, text="Punctuation (标点符号)", variable=punctuation_option, font="Arial 10")
 
@@ -250,7 +257,7 @@ def main():
 
     content_labelframe = tk.LabelFrame(frame, text="Contents")
     content_labelframe.columnconfigure((0, 2), weight=1)
-    content_labelframe.columnconfigure((1, 3), weight=1)
+    content_labelframe.columnconfigure((1, 3), minsize=20)
     content_labelframe.rowconfigure((0, 1), weight=1)
     content_labelframe.grid(row=1, column=0, padx=20, pady=5, sticky="news")
 
