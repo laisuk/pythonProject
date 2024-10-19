@@ -1,41 +1,39 @@
 import os.path
-import re
 import tkinter as tk  # GUI
-# from opencc_jieba import OpenCC
 from tkinter.filedialog import askopenfilename
-
-import jieba  # Segmentor module
-
-from clipboard_win import get_clipboard_text, set_clipboard_text
+# import jieba  # Segmentor module
+# from clipboard_win import get_clipboard_text, set_clipboard_text
 # import pyperclip as pc  # Clipboard module
 # from opencc import OpenCC  # use module: pip install -u opencc-python-reimplemented
-from opencc_rs import OpenCC
+# from opencc_jieba_rs import OpenCC
+from opencc_jieba_pyo3 import OpenCC
+from zho_helper import check_text_code, convert_punctuation
 
 
-def clipboard_get() -> str:
-    r = tk.Tk()
-    r.withdraw()
+def clipboard_tk_get() -> str:
+    ttk = tk.Tk()
+    ttk.withdraw()
     try:
-        clipboard_text = r.clipboard_get()
+        clipboard_text = ttk.clipboard_get()
     except tk.TclError:
         clipboard_text = ''
-    r.update()
-    r.destroy()
+    ttk.update()
+    ttk.destroy()
     return clipboard_text
 
 
-def clipboard_set(text: str) -> None:
-    r = tk.Tk()
-    r.withdraw()
+def clipboard_tk_set(text: str) -> None:
+    ttk = tk.Tk()
+    ttk.withdraw()
     if isinstance(text, str):
-        r.clipboard_clear()
-        r.clipboard_append(text)
-    r.update()
-    r.destroy()
+        ttk.clipboard_clear()
+        ttk.clipboard_append(text)
+    ttk.update()
+    ttk.destroy()
 
 
 # Use this tkinter clipboard module in case pyperclip not working in WSL
-def get_set_clipboard(text_to_paste=None):
+def clipboard_tk_get_set(text_to_paste=None):
     # import tkinter # For Python 2, replace with "import Tkinter as tkinter".
     ttk = tk.Tk()
     ttk.withdraw()
@@ -55,8 +53,8 @@ def get_set_clipboard(text_to_paste=None):
 
 def paste_input(source_textbox, source_char_code_label, config_option, source_char_count_label, filename_label):
     # text = pc.paste()
-    # text = clipboard_get()
-    text = get_clipboard_text()
+    text = clipboard_tk_get()
+    # text = get_clipboard_text()
     update_textbox(text, source_textbox, source_char_code_label, config_option)
 
     source_char_count_label.config(text=f"( {len(text):,} Chars )")
@@ -84,8 +82,8 @@ def update_source_info(text_code, source_char_code_label, config_option):
 
 def copy_output(destination_textbox):
     # pc.copy(destination_textbox.get("1.0", 'end-2c'))
-    # clipboard_set(destination_textbox.get("1.0", 'end-2c'))
-    set_clipboard_text(destination_textbox.get("1.0", 'end-2c'))
+    clipboard_tk_set(destination_textbox.get("1.0", 'end-2c'))
+    # set_clipboard_text(destination_textbox.get("1.0", 'end-2c'))
 
 
 def open_file(source_textbox, source_char_code_label, config_option, source_char_count_label, filename_label):
@@ -113,8 +111,8 @@ def convert(source_textbox, config_option, region_config_option, zhtw_option, pu
         return
 
     if config_option.get() == "jieba":
-        segment_list = jieba.cut(input_text)
-        # segment_list = OpenCC().jieba_cut(input_text)
+        segment_list = OpenCC().jieba_cut(input_text)
+        # segment_list = 'Feature disabled'
         output_text = "/".join(segment_list)
     else:
         region_config = region_config_option.get()
@@ -141,46 +139,48 @@ def convert(source_textbox, config_option, region_config_option, zhtw_option, pu
 
     if config_option.get() != "jieba" and "Non-zh" not in source_char_code_label.cget("text"):
         destination_char_code_label.config(
-            text="zh-Hant (繁体)" if config_option.get() == "s2tw" else "zh-Hans (简体)")
+            text="zh-Hant (繁体)" if config_option.get() == "s2t" else "zh-Hans (简体)")
     else:
         destination_char_code_label.config(
             text=source_char_code_label.cget("text"))
 
 
-def check_text_code(text):
-    # return OpenCC().zho_check(text)
-    strip_text = re.sub(r'[\WA-Za-z0-9_]', "", text)
-    test_text = strip_text if len(strip_text) < 30 else strip_text[0:30]
-    if test_text != OpenCC("t2s").convert(test_text):
-        return 1
-    else:
-        if test_text != OpenCC("s2t").convert(test_text):
-            return 2
-        else:
-            return 0
-
-
-def convert_punctuation(input_text, config):
-    # Declare a dictionary to store the characters and their mappings
-    s2t_punctuation_chars = {
-        '“': '「',
-        '”': '」',
-        '‘': '『',
-        '’': '』'
-    }
-    # Use the join method to create the regular expression patterns
-    if config[0] == "s":
-        pattern = f"[{''.join(s2t_punctuation_chars.keys())}]"  # "[“”‘’]"
-        output_text = re.sub(
-            pattern, lambda m: s2t_punctuation_chars[m.group(0)], input_text)
-    else:
-        # Use the dict comprehension to reverse the dictionary
-        t2s_punctuation_chars = {v: k for k, v in s2t_punctuation_chars.items()}
-        pattern = f"[{''.join(t2s_punctuation_chars.keys())}]"  # "[「」『』]"
-        output_text = re.sub(
-            pattern, lambda m: t2s_punctuation_chars[m.group(0)], input_text)
-
-    return output_text
+# def check_text_code(text):
+#     if len(text) == 0:
+#         return 0
+#     # return OpenCC().zho_check(text)
+#     strip_text = re.sub(r'[\WA-Za-z0-9_]', "", text)
+#     test_text = strip_text if len(strip_text) < 30 else strip_text[0:30]
+#     if test_text != OpenCC("t2s").convert(test_text):
+#         return 1
+#     else:
+#         if test_text != OpenCC("s2t").convert(test_text):
+#             return 2
+#         else:
+#             return 0
+#
+#
+# def convert_punctuation(input_text, config):
+#     # Declare a dictionary to store the characters and their mappings
+#     s2t_punctuation_chars = {
+#         '“': '「',
+#         '”': '」',
+#         '‘': '『',
+#         '’': '』'
+#     }
+#     # Use the join method to create the regular expression patterns
+#     if config[0] == "s":
+#         pattern = f"[{''.join(s2t_punctuation_chars.keys())}]"  # "[“”‘’]"
+#         output_text = re.sub(
+#             pattern, lambda m: s2t_punctuation_chars[m.group(0)], input_text)
+#     else:
+#         # Use the dict comprehension to reverse the dictionary
+#         t2s_punctuation_chars = {v: k for k, v in s2t_punctuation_chars.items()}
+#         pattern = f"[{''.join(t2s_punctuation_chars.keys())}]"  # "[「」『』]"
+#         output_text = re.sub(
+#             pattern, lambda m: t2s_punctuation_chars[m.group(0)], input_text)
+#
+#     return output_text
 
 
 def std_hk_select(zhtw_option):
@@ -198,7 +198,7 @@ def zhtw_click(region_config_option):
 def main():
     # === Main Window === #
     window = tk.Tk()
-    window.title("Hans <-> Hant Converter")
+    window.title("zh-Hans <=> zh-Hant Converter")
     window.geometry("1000x720")
     window.columnconfigure(0, weight=1)
     window.rowconfigure(0, weight=1)
@@ -265,23 +265,23 @@ def main():
     source_textbox.grid(row=0, column=0, padx=(10, 0), pady=5, sticky="news")
     source_scrollbar = tk.Scrollbar(
         content_labelframe, command=source_textbox.yview)
-    source_scrollbar.grid(row=0, column=1, sticky="news")
+    source_scrollbar.grid(row=0, column=1, sticky="news", padx=(0, 5))
     source_textbox['yscrollcommand'] = source_scrollbar.set
 
     destination_textbox = tk.Text(
         content_labelframe, font=("Consolas", 11))
-    destination_textbox.grid(row=0, column=2, padx=(10, 0), pady=5, sticky="news")
+    destination_textbox.grid(row=0, column=2, padx=(5, 0), pady=5, sticky="news")
     destination_scrollbar = tk.Scrollbar(
         content_labelframe, command=destination_textbox.yview)
-    destination_scrollbar.grid(row=0, column=3, sticky="news")
+    destination_scrollbar.grid(row=0, column=3, sticky="news", padx=(0, 10))
     destination_textbox['yscrollcommand'] = destination_scrollbar.set
 
     source_labelframe = tk.LabelFrame(content_labelframe)
     destination_labelframe = tk.LabelFrame(content_labelframe)
     source_labelframe.grid(row=1, column=0, sticky="news",
-                           padx=(10, 0), pady=5, columnspan=2)
+                           padx=(10, 5), pady=5, columnspan=2)
     destination_labelframe.grid(
-        row=1, column=2, sticky="news", padx=10, pady=5, columnspan=2)
+        row=1, column=2, sticky="news", padx=(5, 10), pady=5, columnspan=2)
     source_label = tk.Label(source_labelframe, text="Source")
     destination_label = tk.Label(destination_labelframe, text="Destination")
     source_label.grid(row=0, column=0, padx=5, pady=5)
