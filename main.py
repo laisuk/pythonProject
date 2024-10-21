@@ -5,8 +5,8 @@ from tkinter.filedialog import askopenfilename
 # from clipboard_win import get_clipboard_text, set_clipboard_text
 # import pyperclip as pc  # Clipboard module
 # from opencc import OpenCC  # use module: pip install -u opencc-python-reimplemented
-# from opencc_jieba_rs import OpenCC
-from opencc_jieba_pyo3 import OpenCC
+from opencc_jieba_rs import OpenCC
+# from opencc_jieba_pyo3 import OpenCC
 from zho_helper import check_text_code, convert_punctuation
 
 

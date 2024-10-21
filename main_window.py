@@ -1,7 +1,7 @@
 import os
 import tkinter as tk
 from tkinter.filedialog import askopenfilename
-from opencc_jieba_pyo3 import OpenCC
+from opencc_jieba_rs import OpenCC
 from zho_helper import check_text_code, convert_punctuation
 
 
@@ -262,6 +262,7 @@ class ZhoTkApp:
 
     def run(self):
         self.root.deiconify()  # Show the window
+        self.root.eval('tk::PlaceWindow . center')
         self.root.mainloop()
 
 
