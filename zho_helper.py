@@ -30,6 +30,9 @@ def convert_punctuation(input_text, config):
     else:
         mapping = {v: k for k, v in s2t_punctuation.items()}
 
-    pattern = f"[{''.join(mapping.keys())}]"
+    # Correct and safe way to build the pattern:
+    escaped_chars = [re.escape(char) for char in mapping.keys()]
+    pattern = f"[{''.join(escaped_chars)}]"
+
     output_text = re.sub(pattern, lambda m: mapping[m.group(0)], input_text)
     return output_text
