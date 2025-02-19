@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter.filedialog import askopenfilename
 from opencc_jieba_rs import OpenCC
 from zho_helper import check_text_code, convert_punctuation
+from clipboard_common import set_clipboard_text
 
 
 class ZhoTkApp:
@@ -192,8 +193,8 @@ class ZhoTkApp:
 
     def copy_output(self):
         # pc.copy(destination_textbox.get("1.0", 'end-2c'))
-        self.clipboard_tk_set(self.destination_textbox.get("1.0", 'end-2c'))
-        # set_clipboard_text(destination_textbox.get("1.0", 'end-2c'))
+        # self.clipboard_tk_set(self.destination_textbox.get("1.0", 'end-2c'))
+        set_clipboard_text(self.destination_textbox.get("1.0", 'end-2c'))
 
     def open_file(self):
         filename = askopenfilename(initialdir="./", title="Open File", filetypes=(

@@ -19,22 +19,17 @@ def check_text_code(text):
 
 def convert_punctuation(input_text, config):
     # Declare a dictionary to store the characters and their mappings
-    s2t_punctuation_chars = {
+    s2t_punctuation = {
         '“': '「',
         '”': '」',
         '‘': '『',
         '’': '』'
     }
-    # Use the join method to create the regular expression patterns
     if config[0] == "s":
-        pattern = f"[{''.join(s2t_punctuation_chars.keys())}]"  # "[“”‘’]"
-        output_text = re.sub(
-            pattern, lambda m: s2t_punctuation_chars[m.group(0)], input_text)
+        mapping = s2t_punctuation
     else:
-        # Use the dict comprehension to reverse the dictionary
-        t2s_punctuation_chars = {v: k for k, v in s2t_punctuation_chars.items()}
-        pattern = f"[{''.join(t2s_punctuation_chars.keys())}]"  # "[「」『』]"
-        output_text = re.sub(
-            pattern, lambda m: t2s_punctuation_chars[m.group(0)], input_text)
+        mapping = {v: k for k, v in s2t_punctuation.items()}
 
+    pattern = f"[{''.join(mapping.keys())}]"
+    output_text = re.sub(pattern, lambda m: mapping[m.group(0)], input_text)
     return output_text
